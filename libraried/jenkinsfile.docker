@@ -1,0 +1,15 @@
+@Library('lion_lib@feature/docker') _
+
+
+pipeline {
+    agent any
+    stages {
+        stage('docker') {
+            steps {
+                echo 'Hello, world'
+                sayHello 'Lion'
+                withDocker('nginx:latest', '-u 129:136 -v /tmp:/tmp2')
+            }
+        }
+    }
+}

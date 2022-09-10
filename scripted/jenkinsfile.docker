@@ -1,0 +1,74 @@
+//ref:
+//  https://stackoverflow.com/questions/59687013/using-a-dockerfile-with-jenkins-scripted-pipeline-syntax
+
+def dockerImage
+//jenkins needs entrypoint of the image to be empty
+def runArgs = '--entrypoint \'\''
+pipeline {
+    agent {
+        //docker { image 'node:16.13.1-alpine' }
+        label 'master'
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '7', artifactNumToKeepStr: '7'))
+        timestamps()
+    }
+    stages {
+        stage('Run with Docker Image') {
+            options { timeout(time: 30, unit: 'MINUTES') }
+            steps {
+                script{
+                    docker.image('node:16.13.1-alpine').inside {
+                        withEnv(['FName=Naive','LName=skill']) {
+                            stage('Build') {
+                                echo 'Hello, world'      
+                                sh 'node --version'
+                                sh 'echo $FName $LName'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('Build') {
+            options { timeout(time: 30, unit: 'MINUTES') }
+            steps {
+                script {
+                    //def commit = checkout scm
+                    // we set BRANCH_NAME to make when { branch } syntax work without multibranch job
+                    //env.BRANCH_NAME = commit.GIT_BRANCH.replace('origin/', '')
+
+                    //dockerImage = docker.build("myimage:${env.BUILD_ID}",
+                    //    "--label \"GIT_COMMIT=${env.GIT_COMMIT}\""
+                    //    + " --build-arg MY_ARG=myArg"
+		    //    + " -f ./docker/Dockerfile"
+                    //    //+ " ."
+                    //)
+		    dockerImage = docker.build("myimage:test",
+			"--label \"GIT_COMMIT=test\""
+			+ " --build-arg MY_ARG=myArg"
+			+ " -f ./docker/Dockerfile"
+			+ " ."
+		    )
+                }
+            }
+        }
+        stage('Push to docker repository') {
+            //when { branch 'master' }
+            options { timeout(time: 5, unit: 'MINUTES') }
+            steps {
+		//note: lock is a plugin?
+                //lock("${JOB_NAME}-Push") {
+                    script {
+			//note: docker_registry is a certificate for registry
+                        //docker.withRegistry('https://localhost:5000', 'docker_registry') {
+			docker.withRegistry('https://localhost:5000') {
+                            dockerImage.push('latest')
+                        }
+                    }
+                    milestone 30
+                //}
+            }
+        }
+    }
+}
