@@ -1,4 +1,4 @@
-@Library('lion_lib@feature/docker') _
+@Library('lion_lib') _
 
 
 pipeline {
