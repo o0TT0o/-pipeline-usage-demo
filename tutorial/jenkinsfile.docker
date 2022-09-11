@@ -1,0 +1,45 @@
+//ref:
+//  https://stackoverflow.com/questions/59687013/using-a-dockerfile-with-jenkins-scripted-pipeline-syntax
+
+pipeline {
+    agent {
+        //docker { image 'node:16.13.1-alpine' }
+        label 'master'
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
+        timestamps()
+    }
+    stages {
+        stage('Test') {
+            options { timeout(time: 30, unit: 'MINUTES') }
+            steps {
+                script{
+                    docker.image('node:16.13.1-alpine').inside {
+                        withEnv(['FName=Naive','LName=skill']) {
+                            stage('Build') {
+                                echo 'Hello, world'      
+                                sh 'node --version'
+                                sh 'echo $FName $LName'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //stage('Push to docker repository') {
+        //    when { branch 'master' }
+        //    options { timeout(time: 5, unit: 'MINUTES') }
+        //    steps {
+        //        lock("${JOB_NAME}-Push") {
+        //            script {
+        //                docker.withRegistry('https://myrepo:5000', 'docker_registry') {
+        //                    dockerImage.push('latest')
+        //                }
+        //            }
+        //            milestone 30
+        //        }
+        //    }
+        //}
+    }
+}
