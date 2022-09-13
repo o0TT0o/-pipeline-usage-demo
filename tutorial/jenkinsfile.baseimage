@@ -56,7 +56,7 @@ pipeline {
 	                }
                     stage("Test"){
 	        	        steps{
-	        	            sh "mvn ./maven/pom.xml test -P coverage"  
+	        	            sh "mvn -f ./maven/pom.xml test -P coverage"  
 	        	        }
 	                }		
                 }
